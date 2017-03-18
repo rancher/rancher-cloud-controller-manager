@@ -17,10 +17,12 @@ import (
 	"github.com/golang/glog"
 	"github.com/rancher/go-rancher/client"
 
-	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/client/cache"
+	"k8s.io/client-go/tools/cache"
+
+	api "k8s.io/kubernetes/pkg/api/v1"
 	"k8s.io/kubernetes/pkg/cloudprovider"
-	"k8s.io/kubernetes/pkg/types"
+
+	"k8s.io/apimachinery/pkg/types"
 )
 
 type Host struct {
@@ -105,6 +107,12 @@ type hostAndIPAddresses struct {
 	IPAddresses []client.IpAddress `json:"ipAddresses,omitempty"`
 }
 
+func init() {
+	cloudprovider.RegisterCloudProvider(providerName, func(config io.Reader) (cloudprovider.Interface, error) {
+		return newRancherCloud(config)
+	})
+}
+
 // GetLoadBalancer is an implementation of LoadBalancer.GetLoadBalancer
 func (r *CloudProvider) GetLoadBalancer(clusterName string, service *api.Service) (status *api.LoadBalancerStatus, exists bool, retErr error) {
 	name := formatLBName(cloudprovider.GetLoadBalancerName(service))
@@ -124,7 +132,13 @@ func (r *CloudProvider) GetLoadBalancer(clusterName string, service *api.Service
 }
 
 // EnsureLoadBalancer is an implementation of LoadBalancer.EnsureLoadBalancer.
-func (r *CloudProvider) EnsureLoadBalancer(clusterName string, service *api.Service, hosts []string) (*api.LoadBalancerStatus, error) {
+func (r *CloudProvider) EnsureLoadBalancer(clusterName string, service *api.Service, nodes []*api.Node) (*api.LoadBalancerStatus, error) {
+	hosts := []string{}
+
+	for _, node := range nodes {
+		hosts = append(hosts, node.Name)
+	}
+
 	name := formatLBName(cloudprovider.GetLoadBalancerName(service))
 	loadBalancerIP := service.Spec.LoadBalancerIP
 	ports := service.Spec.Ports
@@ -266,7 +280,13 @@ func convertLB(intf interface{}) *client.LoadBalancerService {
 }
 
 // UpdateLoadBalancer is an implementation of LoadBalancer.UpdateLoadBalancer.
-func (r *CloudProvider) UpdateLoadBalancer(clusterName string, service *api.Service, hosts []string) error {
+func (r *CloudProvider) UpdateLoadBalancer(clusterName string, service *api.Service, nodes []*api.Node) error {
+	hosts := []string{}
+
+	for _, node := range nodes {
+		hosts = append(hosts, node.Name)
+	}
+
 	name := formatLBName(cloudprovider.GetLoadBalancerName(service))
 	glog.Infof("UpdateLoadBalancer [%s] [%s]", name, hosts)
 	lb, err := r.getLBByName(name)

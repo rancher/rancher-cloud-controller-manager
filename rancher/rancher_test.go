@@ -9,8 +9,8 @@ import (
 
 	"github.com/rancher/go-rancher/client"
 
+	"k8s.io/client-go/tools/cache"
 	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/client/cache"
 )
 
 var (
