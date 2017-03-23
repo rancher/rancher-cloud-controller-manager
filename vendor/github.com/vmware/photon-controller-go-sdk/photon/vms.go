@@ -20,7 +20,7 @@ type VmAPI struct {
 	client *Client
 }
 
-var vmUrl string = rootUrl + "/vms/"
+var vmUrl string = "/vms/"
 
 func (api *VmAPI) Get(id string) (vm *VM, err error) {
 	res, err := api.client.restClient.Get(api.client.Endpoint+vmUrl+id, api.client.options.TokenOptions)

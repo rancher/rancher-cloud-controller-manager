@@ -29,7 +29,7 @@ type VmGetOptions struct {
 	Name string `urlParam:"name"`
 }
 
-var projectUrl string = rootUrl + "/projects/"
+var projectUrl string = "/projects/"
 
 // Deletes the project with specified ID. Any VMs, disks, etc., owned by the project must be deleted first.
 func (api *ProjectsAPI) Delete(projectID string) (task *Task, err error) {

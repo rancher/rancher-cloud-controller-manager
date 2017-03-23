@@ -19,7 +19,7 @@ type TasksAPI struct {
 	client *Client
 }
 
-var taskUrl string = rootUrl + "/tasks"
+var taskUrl string = "/tasks"
 
 // Gets a task by ID.
 func (api *TasksAPI) Get(id string) (task *Task, err error) {

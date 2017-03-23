@@ -25,7 +25,7 @@ type FlavorGetOptions struct {
 	Kind string `urlParam:"kind"`
 }
 
-var flavorUrl string = rootUrl + "/flavors"
+var flavorUrl string = "/flavors"
 
 // Creates a flavor.
 func (api *FlavorsAPI) Create(spec *FlavorCreateSpec) (task *Task, err error) {
