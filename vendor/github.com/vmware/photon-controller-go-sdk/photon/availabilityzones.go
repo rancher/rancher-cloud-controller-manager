@@ -19,7 +19,7 @@ type AvailabilityZonesAPI struct {
 	client *Client
 }
 
-var availabilityzoneUrl string = rootUrl + "/availabilityzones"
+var availabilityzoneUrl string = "/availabilityzones"
 
 // Creates availability zone.
 func (api *AvailabilityZonesAPI) Create(availabilityzoneSpec *AvailabilityZoneCreateSpec) (task *Task, err error) {

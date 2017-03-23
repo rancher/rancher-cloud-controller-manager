@@ -24,7 +24,7 @@ type NetworkGetOptions struct {
 	Name string `urlParam:"name"`
 }
 
-var networkUrl string = rootUrl + "/subnets"
+var networkUrl string = "/subnets"
 
 // Creates a network.
 func (api *NetworksAPI) Create(networkSpec *NetworkCreateSpec) (task *Task, err error) {

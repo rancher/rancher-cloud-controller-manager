@@ -24,8 +24,8 @@ type VirtualSubnetGetOptions struct {
 	Name string `urlParam:"name"`
 }
 
-var subnetsUrl = rootUrl + "/subnets"
-var projectsUrl = rootUrl + "/projects"
+var subnetsUrl = "/subnets"
+var projectsUrl = "/projects"
 
 // Create a virtual network
 func (api *VirtualSubnetsAPI) Create(projectId string,

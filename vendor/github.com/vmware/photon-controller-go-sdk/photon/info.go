@@ -17,7 +17,7 @@ type InfoAPI struct {
 	client *Client
 }
 
-var infoUrl = rootUrl + "/info"
+var infoUrl = "/info"
 
 // Get info
 func (api *InfoAPI) Get() (info *Info, err error) {

@@ -19,7 +19,7 @@ type HostsAPI struct {
 	client *Client
 }
 
-var hostUrl string = rootUrl + "/hosts"
+var hostUrl string = "/hosts"
 
 // Creates a host.
 func (api *HostsAPI) Create(hostSpec *HostCreateSpec, deploymentId string) (task *Task, err error) {
@@ -28,7 +28,7 @@ func (api *HostsAPI) Create(hostSpec *HostCreateSpec, deploymentId string) (task
 		return
 	}
 	res, err := api.client.restClient.Post(
-		api.client.Endpoint+deploymentUrl+"/"+deploymentId+"/hosts",
+		api.client.Endpoint+deploymentUrl+"/"+deploymentId+hostUrl,
 		"application/json",
 		bytes.NewReader(body),
 		api.client.options.TokenOptions)

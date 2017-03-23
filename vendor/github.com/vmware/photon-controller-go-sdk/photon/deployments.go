@@ -19,7 +19,7 @@ type DeploymentsAPI struct {
 	client *Client
 }
 
-var deploymentUrl string = rootUrl + "/deployments"
+var deploymentUrl string = "/deployments"
 
 // Creates a deployment
 func (api *DeploymentsAPI) Create(deploymentSpec *DeploymentCreateSpec) (task *Task, err error) {
