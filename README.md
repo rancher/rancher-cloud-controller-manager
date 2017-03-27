@@ -6,7 +6,7 @@ Rancher Cloud Controller Manager - An external cloud controller manager for runn
 
 # Introduction
 
-External cloud providers were introduced as an Alpha feature in Kubernetes release 1.6. This repository contains an implementation of external cloud provider for Rancher clusters. An external cloud provider is a kubernetes controller that runs cloud provider-specific loops required for the functioning of kubernetes. These loops were originally a part of the kube-controller-manager, but they were tightly coupling the kube-controller-manager to cloud-provider specific code. In order to free the kubernetes project of this dependency, the {provider}-cloud-controller-manager was introduced.  
+External cloud providers were introduced as an Alpha feature in Kubernetes release 1.6. This repository contains an implementation of external cloud provider for Rancher clusters. An external cloud provider is a kubernetes controller that runs cloud provider-specific loops required for the functioning of kubernetes. These loops were originally a part of the `kube-controller-manager`, but they were tightly coupling the `kube-controller-manager` to cloud-provider specific code. In order to free the kubernetes project of this dependency, the `cloud-controller-manager` was introduced.  
 
 `cloud-controller-manager` allows cloud vendors and kubernetes core to evolve independent of each other. In prior releases, the core Kubernetes code was dependent upon cloud provider-specific code for functionality. In future releases, code specific to cloud vendors should be maintained by the cloud vendor themselves, and linked to `cloud-controller-manager` while running Kubernetes.
 
@@ -29,7 +29,7 @@ The following controllers are implemented by the `rancher-cloud-controller-manag
 In order to create an external cloud-controller-manager for your cloud, simply follow these two steps
 
 1. Import your cloud provider code [here](https://github.com/rancher/rancher-cloud-controller-manager/blob/master/main.go#L18)
-2. Set the first argument to [InitCloudProvider](https://github.com/rancher/rancher-cloud-controller-manager/blob/master/main.go#L38) as the output of your cloudprovider.ProviderName() method.
+2. Set the first argument to [InitCloudProvider](https://github.com/rancher/rancher-cloud-controller-manager/blob/master/main.go#L38) as the output of your `cloudprovider.ProviderName()` method.
 
 # License
 Copyright (c) 2014-2015 [Rancher Labs, Inc.](http://rancher.com)
