@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rancher/go-rancher/client"
+	"github.com/rancher/go-rancher/v2"
 
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/kubernetes/pkg/api"

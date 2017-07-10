@@ -10,6 +10,7 @@
 package photon
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 )
@@ -24,7 +25,7 @@ type ImageGetOptions struct {
 	Name string `urlParam:"name"`
 }
 
-var imageUrl string = "/images"
+var imageUrl string = rootUrl + "/images"
 
 // Uploads a new image, reading from the specified image path.
 // If options is nil, default options are used.
@@ -112,6 +113,62 @@ func (api *ImagesAPI) GetTasks(id string, options *TaskGetOptions) (result *Task
 
 	result = &TaskList{}
 	err = json.Unmarshal(res, result)
+	return
+}
+
+// Gets IAM Policy of an image.
+func (api *ImagesAPI) GetIam(imageID string) (policy *[]PolicyEntry, err error) {
+	res, err := api.client.restClient.Get(
+		api.client.Endpoint+imageUrl+"/"+imageID+"/iam",
+		api.client.options.TokenOptions)
+	if err != nil {
+		return
+	}
+	defer res.Body.Close()
+	res, err = getError(res)
+	if err != nil {
+		return
+	}
+	var result []PolicyEntry
+	err = json.NewDecoder(res.Body).Decode(&result)
+	return &result, nil
+}
+
+// Sets IAM Policy on an image.
+func (api *ImagesAPI) SetIam(imageID string, policy *[]PolicyEntry) (task *Task, err error) {
+	body, err := json.Marshal(policy)
+	if err != nil {
+		return
+	}
+	res, err := api.client.restClient.Post(
+		api.client.Endpoint+imageUrl+"/"+imageID+"/iam",
+		"application/json",
+		bytes.NewReader(body),
+		api.client.options.TokenOptions)
+	if err != nil {
+		return
+	}
+	defer res.Body.Close()
+	task, err = getTask(getError(res))
+	return
+}
+
+// Modifies IAM Policy on an image.
+func (api *ImagesAPI) ModifyIam(imageID string, policyDelta *PolicyDelta) (task *Task, err error) {
+	body, err := json.Marshal(policyDelta)
+	if err != nil {
+		return
+	}
+	res, err := api.client.restClient.Put(
+		api.client.Endpoint+imageUrl+"/"+imageID+"/iam",
+		"application/json",
+		bytes.NewReader(body),
+		api.client.options.TokenOptions)
+	if err != nil {
+		return
+	}
+	defer res.Body.Close()
+	task, err = getTask(getError(res))
 	return
 }
 

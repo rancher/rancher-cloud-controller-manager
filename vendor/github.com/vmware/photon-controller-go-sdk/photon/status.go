@@ -18,7 +18,7 @@ type StatusAPI struct {
 	client *Client
 }
 
-var statusUrl string = "/status"
+var statusUrl string = rootUrl + "/status"
 
 // Returns the status of an photon endpoint.
 func (api *StatusAPI) Get() (status *Status, err error) {

@@ -19,7 +19,7 @@ type RoutersAPI struct {
 	client *Client
 }
 
-var routerUrl string = "/routers/"
+var routerUrl string = rootUrl + "/routers/"
 
 // Gets a router with the specified ID.
 func (api *RoutersAPI) Get(id string) (router *Router, err error) {

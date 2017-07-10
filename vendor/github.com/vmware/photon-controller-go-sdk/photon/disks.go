@@ -18,7 +18,7 @@ type DisksAPI struct {
 	client *Client
 }
 
-var diskUrl string = "/disks/"
+var diskUrl string = rootUrl + "/disks/"
 
 // Gets a PersistentDisk for the disk with specified ID.
 func (api *DisksAPI) Get(diskID string) (disk *PersistentDisk, err error) {

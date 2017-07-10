@@ -787,3 +787,16 @@ type SubnetCreateSpec struct {
 type SubnetUpdateSpec struct {
 	SubnetName string `json:"name"`
 }
+
+// Identity and Access Management (IAM)
+// IAM Policy entry
+type PolicyEntry struct {
+	Principal string   `json:"principal"`
+	Roles     []string `json:"roles"`
+}
+
+type PolicyDelta struct {
+	Principal string `json:"principal"`
+	Action    string `json:"action"`
+	Role      string `json:"role"`
+}

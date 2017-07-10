@@ -7,4 +7,4 @@ cd $(dirname $0)/..
 
 mkdir -p bin
 [ "$(uname)" != "Darwin" ] && LINKFLAGS="-linkmode external -extldflags -static -s"
-go build -ldflags "$LINKFLAGS" -o bin/rancher-controller-manager
+go build -ldflags "$LINKFLAGS" -o bin/rancher-cloud-controller-manager

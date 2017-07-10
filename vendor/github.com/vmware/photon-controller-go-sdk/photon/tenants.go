@@ -30,7 +30,7 @@ type ProjectGetOptions struct {
 	Name string `urlParam:"name"`
 }
 
-var tenantUrl string = "/tenants"
+var tenantUrl string = rootUrl + "/tenants"
 
 // Returns all tenants on an photon instance.
 func (api *TenantsAPI) GetAll() (result *Tenants, err error) {

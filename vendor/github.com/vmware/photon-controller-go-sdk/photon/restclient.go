@@ -52,6 +52,9 @@ type bodyRewinder func() io.Reader
 
 const appJson string = "application/json"
 
+// Root URL specifies the API version.
+const rootUrl string = "/v1"
+
 // From https://golang.org/src/mime/multipart/writer.go
 var quoteEscaper = strings.NewReplacer("\\", "\\\\", `"`, "\\\"")
 
@@ -136,6 +139,20 @@ func (client *restClient) Post(url string, contentType string, body io.ReadSeeke
 	}
 
 	req := request{"POST", url, contentType, body, tokens}
+	rewinder := func() io.Reader {
+		body.Seek(0, 0)
+		return body
+	}
+	res, err = client.SendRequest(&req, rewinder)
+	return
+}
+
+func (client *restClient) Patch(url string, contentType string, body io.ReadSeeker, tokens *TokenOptions) (res *http.Response, err error) {
+	if contentType == "" {
+		contentType = appJson
+	}
+
+	req := request{"PATCH", url, contentType, body, tokens}
 	rewinder := func() io.Reader {
 		body.Seek(0, 0)
 		return body

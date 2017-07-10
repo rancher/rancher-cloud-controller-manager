@@ -19,25 +19,30 @@ type ServicesAPI struct {
 	client *Client
 }
 
-var serviceUrl string = "/services/"
+var serviceUrl = rootUrl + "/services/"
 
-const ExtendedPropertyDNS string = "dns"
-const ExtendedPropertyGateway string = "gateway"
-const ExtendedPropertyNetMask string = "netmask"
-const ExtendedPropertyLoadBalancerIP string = "load_balancer_ip"
-const ExtendedPropertyMasterIPs string = "master_ips"
-const ExtendedPropertyMasterIP string = "master_ip"
-const ExtendedPropertyMasterIP2 string = "master_ip2"
-const ExtendedPropertyContainerNetwork string = "container_network"
-const ExtendedPropertyZookeeperIP1 string = "zookeeper_ip1"
-const ExtendedPropertyZookeeperIP2 string = "zookeeper_ip2"
-const ExtendedPropertyZookeeperIP3 string = "zookeeper_ip3"
-const ExtendedPropertyETCDIP1 string = "etcd_ip1"
-const ExtendedPropertyETCDIP2 string = "etcd_ip2"
-const ExtendedPropertyETCDIP3 string = "etcd_ip3"
-const ExtendedPropertySSHKey string = "ssh_key"
-const ExtendedPropertyRegistryCACert string = "registry_ca_cert"
-const ExtendedPropertyAdminPassword string = "admin_password"
+// Extended Properties
+const (
+	ExtendedPropertyDNS              = "dns"
+	ExtendedPropertyGateway          = "gateway"
+	ExtendedPropertyNetMask          = "netmask"
+	ExtendedPropertyLoadBalancerIP   = "load_balancer_ip"
+	ExtendedPropertyNumberOfMasters  = "number_of_masters"
+	ExtendedPropertyMasterIPs        = "master_ips"
+	ExtendedPropertyMasterIP         = "master_ip"
+	ExtendedPropertyMasterIP2        = "master_ip2"
+	ExtendedPropertyContainerNetwork = "container_network"
+	ExtendedPropertyZookeeperIP1     = "zookeeper_ip1"
+	ExtendedPropertyZookeeperIP2     = "zookeeper_ip2"
+	ExtendedPropertyZookeeperIP3     = "zookeeper_ip3"
+	ExtendedPropertyNumberOfETCDs    = "number_of_etcds"
+	ExtendedPropertyETCDIP1          = "etcd_ip1"
+	ExtendedPropertyETCDIP2          = "etcd_ip2"
+	ExtendedPropertyETCDIP3          = "etcd_ip3"
+	ExtendedPropertySSHKey           = "ssh_key"
+	ExtendedPropertyRegistryCACert   = "registry_ca_cert"
+	ExtendedPropertyAdminPassword    = "admin_password"
+)
 
 // Deletes a service with specified ID.
 func (api *ServicesAPI) Delete(id string) (task *Task, err error) {

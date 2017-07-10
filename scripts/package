@@ -10,4 +10,4 @@ SUFFIX=""
 [ "${ARCH}" != "amd64" ] && SUFFIX="_${ARCH}"
 
 mkdir -p dist/artifacts
-tar cvJf dist/artifacts/rancher-catalog-service${SUFFIX}.tar.xz -C ./bin .
+tar cvJf dist/artifacts/rancher-cloud-controller-manager${SUFFIX}.tar.xz -C ./bin .

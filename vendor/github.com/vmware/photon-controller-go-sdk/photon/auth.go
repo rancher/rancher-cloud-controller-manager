@@ -21,7 +21,7 @@ type AuthAPI struct {
 	client *Client
 }
 
-const authUrl string = "/auth"
+const authUrl string = rootUrl + "/auth"
 
 // Gets authentication info.
 func (api *AuthAPI) Get() (info *AuthInfo, err error) {

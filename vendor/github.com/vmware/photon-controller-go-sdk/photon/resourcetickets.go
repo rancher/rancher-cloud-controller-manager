@@ -18,7 +18,7 @@ type ResourceTicketsAPI struct {
 	client *Client
 }
 
-var resourceTicketUrl string = "/resource-tickets/"
+var resourceTicketUrl string = rootUrl + "/resource-tickets/"
 
 // Gets all tasks with the specified resource ticket ID, using options to filter the results.
 // If options is nil, no filtering will occur.

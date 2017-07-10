@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"fmt"
 	"reflect"
+	"strconv"
 	"sync"
 	"testing"
 
@@ -35,6 +36,7 @@ import (
 	examplev1 "k8s.io/apiserver/pkg/apis/example/v1"
 	"k8s.io/apiserver/pkg/storage"
 	storagetests "k8s.io/apiserver/pkg/storage/tests"
+	"k8s.io/apiserver/pkg/storage/value"
 
 	"github.com/coreos/etcd/integration"
 	"golang.org/x/net/context"
@@ -56,13 +58,19 @@ type prefixTransformer struct {
 	err    error
 }
 
-func (p prefixTransformer) TransformFromStorage(b []byte) ([]byte, bool, error) {
+func (p prefixTransformer) TransformFromStorage(b []byte, ctx value.Context) ([]byte, bool, error) {
+	if ctx == nil {
+		panic("no context provided")
+	}
 	if !bytes.HasPrefix(b, p.prefix) {
 		return nil, false, fmt.Errorf("value does not have expected prefix: %s", string(b))
 	}
 	return bytes.TrimPrefix(b, p.prefix), p.stale, p.err
 }
-func (p prefixTransformer) TransformToStorage(b []byte) ([]byte, error) {
+func (p prefixTransformer) TransformToStorage(b []byte, ctx value.Context) ([]byte, error) {
+	if ctx == nil {
+		panic("no context provided")
+	}
 	if len(b) > 0 {
 		return append(append([]byte{}, p.prefix...), b...), p.err
 	}
@@ -278,9 +286,9 @@ func TestGetToList(t *testing.T) {
 		pred: storage.SelectionPredicate{
 			Label: labels.Everything(),
 			Field: fields.ParseSelectorOrDie("metadata.name!=" + storedObj.Name),
-			GetAttrs: func(obj runtime.Object) (labels.Set, fields.Set, error) {
+			GetAttrs: func(obj runtime.Object) (labels.Set, fields.Set, bool, error) {
 				pod := obj.(*example.Pod)
-				return nil, fields.Set{"metadata.name": pod.Name}, nil
+				return nil, fields.Set{"metadata.name": pod.Name}, pod.Initializers != nil, nil
 			},
 		},
 		expectedOut: nil,
@@ -452,6 +460,41 @@ func TestGuaranteedUpdateWithTTL(t *testing.T) {
 	testCheckEventType(t, watch.Deleted, w)
 }
 
+func TestGuaranteedUpdateChecksStoredData(t *testing.T) {
+	ctx, store, cluster := testSetup(t)
+	defer cluster.Terminate(t)
+
+	input := &example.Pod{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}
+	key := "/somekey"
+
+	// serialize input into etcd with data that would be normalized by a write - in this case, leading
+	// and trailing whitespace
+	codec := codecs.LegacyCodec(examplev1.SchemeGroupVersion)
+	data, err := runtime.Encode(codec, input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp, err := store.client.Put(ctx, key, "test! "+string(data)+" ")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// this update should write the canonical value to etcd because the new serialization differs
+	// from the stored serialization
+	input.ResourceVersion = strconv.FormatInt(resp.Header.Revision, 10)
+	out := &example.Pod{}
+	err = store.GuaranteedUpdate(ctx, key, out, true, nil,
+		func(_ runtime.Object, _ storage.ResponseMeta) (runtime.Object, *uint64, error) {
+			return input, nil, nil
+		}, input)
+	if err != nil {
+		t.Fatalf("Update failed: %v", err)
+	}
+	if out.ResourceVersion == strconv.FormatInt(resp.Header.Revision, 10) {
+		t.Errorf("guaranteed update should have updated the serialized data, got %#v", out)
+	}
+}
+
 func TestGuaranteedUpdateWithConflict(t *testing.T) {
 	ctx, store, cluster := testSetup(t)
 	defer cluster.Terminate(t)
@@ -562,10 +605,10 @@ func TestTransformationFailure(t *testing.T) {
 	}); !storage.IsInternalError(err) {
 		t.Errorf("Unexpected error: %v", err)
 	}
-	// GuaranteedUpdate with suggestion should not return an error if we don't change the object
+	// GuaranteedUpdate with suggestion should return an error if we don't change the object
 	if err := store.GuaranteedUpdate(ctx, preset[1].key, &example.Pod{}, false, nil, func(input runtime.Object, res storage.ResponseMeta) (output runtime.Object, ttl *uint64, err error) {
 		return input, nil, nil
-	}, preset[1].obj); err != nil {
+	}, preset[1].obj); err == nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
@@ -637,9 +680,9 @@ func TestList(t *testing.T) {
 		pred: storage.SelectionPredicate{
 			Label: labels.Everything(),
 			Field: fields.ParseSelectorOrDie("metadata.name!=" + preset[0].storedObj.Name),
-			GetAttrs: func(obj runtime.Object) (labels.Set, fields.Set, error) {
+			GetAttrs: func(obj runtime.Object) (labels.Set, fields.Set, bool, error) {
 				pod := obj.(*example.Pod)
-				return nil, fields.Set{"metadata.name": pod.Name}, nil
+				return nil, fields.Set{"metadata.name": pod.Name}, pod.Initializers != nil, nil
 			},
 		},
 		expectedOut: nil,
@@ -692,6 +735,7 @@ func testPropogateStore(ctx context.Context, t *testing.T, store *store, obj *ex
 func TestPrefix(t *testing.T) {
 	codec := apitesting.TestCodec(codecs, examplev1.SchemeGroupVersion)
 	cluster := integration.NewClusterV3(t, &integration.ClusterConfig{Size: 1})
+	defer cluster.Terminate(t)
 	transformer := prefixTransformer{prefix: []byte("test!")}
 	testcases := map[string]string{
 		"custom/prefix":     "/custom/prefix",
