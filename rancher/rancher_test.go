@@ -9,8 +9,9 @@ import (
 
 	"github.com/rancher/go-rancher/v2"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/kubernetes/pkg/api"
+	api "k8s.io/kubernetes/pkg/api/v1"
 )
 
 var (
@@ -28,7 +29,7 @@ var (
 	ipAddressLinks            map[string]*client.IpAddressCollection
 	lbConsumedServicesLinks   map[string]*client.ServiceCollection
 	lbConsumedByServicesLinks map[string]*client.ServiceCollection
-	lbServiceLinks            map[string]*client.SetLoadBalancerServiceLinksInput
+	lbServiceLinks            map[string]*client.SetServiceLinksInput
 )
 
 type fakeRancherBaseClient struct {
@@ -51,6 +52,41 @@ func (f *fakeRancherBaseClient) GetLink(resource client.Resource, link string, r
 		}
 	}
 	return nil
+}
+
+type fakeSettingClient struct{}
+
+func (f *fakeSettingClient) List(opts *client.ListOpts) (*client.SettingCollection, error) {
+	if name, ok := opts.Filters["name"]; ok {
+		return &client.SettingCollection{
+			Data: []client.Setting{
+				client.Setting{
+					Name:  name.(string),
+					Value: "val1",
+				},
+			},
+		}, nil
+	}
+	return nil, nil
+}
+
+func (f *fakeSettingClient) Create(opts *client.Setting) (*client.Setting, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (f *fakeSettingClient) Update(opts *client.Setting, updates interface{}) (*client.Setting, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (f *fakeSettingClient) ById(id string) (*client.Setting, error) {
+	return &client.Setting{
+		Name:  id,
+		Value: "val1",
+	}, nil
+}
+
+func (f *fakeSettingClient) Delete(existing *client.Setting) error {
+	return fmt.Errorf("not implemented")
 }
 
 type fakeHostClient struct{}
@@ -107,6 +143,22 @@ func (f *fakeHostClient) ActionUpdate(*client.Host) (*client.Host, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
+func (f *fakeHostClient) ActionError(*client.Host) (*client.Host, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (f *fakeHostClient) ActionContinueupgrade(*client.Host) (*client.Host, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (f *fakeHostClient) ActionProvision(*client.Host) (*client.Host, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (f *fakeHostClient) ActionEvacuate(*client.Host) (*client.Host, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
 type fakeLoadBalancerServiceClient struct{}
 
 func (f *fakeLoadBalancerServiceClient) List(opts *client.ListOpts) (*client.LoadBalancerServiceCollection, error) {
@@ -118,7 +170,7 @@ func (f *fakeLoadBalancerServiceClient) Create(opts *client.LoadBalancerService)
 }
 
 func (f *fakeLoadBalancerServiceClient) Update(existing *client.LoadBalancerService, updates interface{}) (*client.LoadBalancerService, error) {
-	return nil, fmt.Errorf("not implemented")
+	return nil, nil
 }
 
 func (f *fakeLoadBalancerServiceClient) ById(id string) (*client.LoadBalancerService, error) {
@@ -145,7 +197,7 @@ func (f *fakeLoadBalancerServiceClient) ActionActivate(*client.LoadBalancerServi
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (f *fakeLoadBalancerServiceClient) ActionAddservicelink(*client.LoadBalancerService, *client.AddRemoveLoadBalancerServiceLinkInput) (*client.Service, error) {
+func (f *fakeLoadBalancerServiceClient) ActionAddservicelink(*client.LoadBalancerService, *client.AddRemoveServiceLinkInput) (*client.Service, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
@@ -173,7 +225,7 @@ func (f *fakeLoadBalancerServiceClient) ActionRemove(*client.LoadBalancerService
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (f *fakeLoadBalancerServiceClient) ActionRemoveservicelink(*client.LoadBalancerService, *client.AddRemoveLoadBalancerServiceLinkInput) (*client.Service, error) {
+func (f *fakeLoadBalancerServiceClient) ActionRemoveservicelink(*client.LoadBalancerService, *client.AddRemoveServiceLinkInput) (*client.Service, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
@@ -185,7 +237,7 @@ func (f *fakeLoadBalancerServiceClient) ActionRollback(*client.LoadBalancerServi
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (f *fakeLoadBalancerServiceClient) ActionSetservicelinks(lb *client.LoadBalancerService, links *client.SetLoadBalancerServiceLinksInput) (*client.Service, error) {
+func (f *fakeLoadBalancerServiceClient) ActionSetservicelinks(lb *client.LoadBalancerService, links *client.SetServiceLinksInput) (*client.Service, error) {
 	lbServiceLinks[lb.Id] = links
 	return nil, nil
 }
@@ -195,6 +247,10 @@ func (f *fakeLoadBalancerServiceClient) ActionUpdate(*client.LoadBalancerService
 }
 
 func (f *fakeLoadBalancerServiceClient) ActionUpgrade(*client.LoadBalancerService, *client.ServiceUpgrade) (*client.Service, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (f *fakeLoadBalancerServiceClient) ActionContinueupgrade(*client.LoadBalancerService) (*client.Service, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
@@ -283,6 +339,10 @@ func (f *fakeServiceClient) ActionUpgrade(*client.Service, *client.ServiceUpgrad
 	return nil, fmt.Errorf("not implemented")
 }
 
+func (f *fakeServiceClient) ActionContinueupgrade(*client.Service) (*client.Service, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
 type fakeExternalServiceClient struct{}
 
 func (f *fakeExternalServiceClient) List(opts *client.ListOpts) (*client.ExternalServiceCollection, error) {
@@ -356,6 +416,10 @@ func (f *fakeExternalServiceClient) ActionUpgrade(*client.ExternalService, *clie
 	return nil, fmt.Errorf("not implemented")
 }
 
+func (f *fakeExternalServiceClient) ActionContinueupgrade(*client.ExternalService) (*client.Service, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
 func TestMain(m *testing.M) {
 	hostTestSerializer = &sync.Mutex{}
 	lbTestSerializer = &sync.Mutex{}
@@ -383,7 +447,7 @@ func TestMain(m *testing.M) {
 	ipAddressLinks = make(map[string]*client.IpAddressCollection)
 	lbConsumedServicesLinks = make(map[string]*client.ServiceCollection)
 	lbConsumedByServicesLinks = make(map[string]*client.ServiceCollection)
-	lbServiceLinks = make(map[string]*client.SetLoadBalancerServiceLinksInput)
+	lbServiceLinks = make(map[string]*client.SetServiceLinksInput)
 
 	cloudProvider = &CloudProvider{
 		client:    testClient,
@@ -477,11 +541,11 @@ func TestNodeAddresses(t *testing.T) {
 		t.Errorf("expected 5 addresses, found, [%+v], err: [%v]", addresses, err)
 	}
 
-	if addresses[2].Type != api.NodeExternalIP || addresses[2].Address != "192.168.1.1" {
+	if addresses[2].Type != api.NodeInternalIP || addresses[2].Address != "192.168.1.1" {
 		t.Errorf("expected address 0 to be 192.168.1.1, found %s", addresses[2].Address)
 	}
 
-	if addresses[3].Type != api.NodeLegacyHostIP || addresses[3].Address != "192.168.1.1" {
+	if addresses[3].Type != api.NodeExternalIP || addresses[3].Address != "192.168.1.1" {
 		t.Errorf("expected address 1 to be 192.168.1.1, found %s", addresses[3].Address)
 	}
 
@@ -499,9 +563,9 @@ func TestGetLoadBalancer(t *testing.T) {
 				Resource: client.Resource{
 					Id: "1lb1",
 				},
-				PublicEndpoints: []interface{}{
-					PublicEndpoint{
-						IPAddress: "172.178.1.1",
+				PublicEndpoints: []client.PublicEndpoint{
+					client.PublicEndpoint{
+						IpAddress: "172.178.1.1",
 						Port:      8080,
 					},
 				},
@@ -511,7 +575,7 @@ func TestGetLoadBalancer(t *testing.T) {
 	}
 
 	service := api.Service{
-		ObjectMeta: api.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-lb-1",
 			UID:  "test-lb-1",
 		},
@@ -540,9 +604,9 @@ func TestEnsureLoadBalancerDeleted(t *testing.T) {
 				Resource: client.Resource{
 					Id: "1lb1",
 				},
-				PublicEndpoints: []interface{}{
-					PublicEndpoint{
-						IPAddress: "172.178.1.1",
+				PublicEndpoints: []client.PublicEndpoint{
+					client.PublicEndpoint{
+						IpAddress: "172.178.1.1",
 						Port:      8080,
 					},
 				},
@@ -552,7 +616,7 @@ func TestEnsureLoadBalancerDeleted(t *testing.T) {
 	}
 
 	service := api.Service{
-		ObjectMeta: api.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-lb-1",
 			UID:  "test-lb-1",
 		},
@@ -636,9 +700,8 @@ func TestUpdateLoadBalancer(t *testing.T) {
 				Resource: client.Resource{
 					Id: "1s2",
 				},
-				EnvironmentId: "1e1",
-				Name:          "externalserv1",
-				State:         "active",
+				Name:  "externalserv1",
+				State: "active",
 			},
 		},
 	}
@@ -652,20 +715,19 @@ func TestUpdateLoadBalancer(t *testing.T) {
 						"setservicelinks": "setservicelinks",
 					},
 				},
-				PublicEndpoints: []interface{}{
-					PublicEndpoint{
-						IPAddress: "172.178.1.1",
+				PublicEndpoints: []client.PublicEndpoint{
+					client.PublicEndpoint{
+						IpAddress: "172.178.1.1",
 						Port:      8080,
 					},
 				},
-				Name:          "atestlb1",
-				EnvironmentId: "1e1",
+				Name: "atestlb1",
 			},
 		},
 	}
 
 	service := api.Service{
-		ObjectMeta: api.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-lb-1",
 			UID:  "test-lb-1",
 		},
@@ -705,7 +767,13 @@ func TestUpdateLoadBalancer(t *testing.T) {
 		},
 	}
 
-	err := cloudProvider.UpdateLoadBalancer("", &service, []string{"host1"})
+	err := cloudProvider.UpdateLoadBalancer("", &service, []*api.Node{
+		&api.Node{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "host1",
+			},
+		},
+	})
 
 	if err != nil {
 		t.Errorf("Error deleting load balancer, err: [%v]", err)
@@ -724,131 +792,7 @@ func TestUpdateLoadBalancer(t *testing.T) {
 		t.Errorf("lb service links not updated as expected")
 	}
 
-	if lbServiceLink.ServiceLinks[0].(*client.LoadBalancerServiceLink).ServiceId != "1s2" {
+	if lbServiceLink.ServiceLinks[0].ServiceId != "1s2" {
 		t.Errorf("lb service links not updated as expected")
-	}
-}
-
-func TestEnsureLoadBalancer(t *testing.T) {
-	lbTestSerializer.Lock()
-	defer lbTestSerializer.Unlock()
-	externalServiceList = &client.ExternalServiceCollection{
-		Data: []client.ExternalService{
-			client.ExternalService{
-				Resource: client.Resource{
-					Id: "1s2",
-				},
-				EnvironmentId: "1e1",
-				Name:          "externalserv1",
-				State:         "active",
-			},
-		},
-	}
-
-	loadBalancerServiceList = &client.LoadBalancerServiceCollection{
-		Data: []client.LoadBalancerService{
-			client.LoadBalancerService{
-				Resource: client.Resource{
-					Id: "1lb1",
-					Actions: map[string]string{
-						"setservicelinks": "setservicelinks",
-						"deactivate":      "deactivate",
-					},
-				},
-				PublicEndpoints: []interface{}{
-					PublicEndpoint{
-						IPAddress: "192.168.1.2",
-						Port:      8080,
-					},
-				},
-				Name:          "atestlb1",
-				EnvironmentId: "1e1",
-				LaunchConfig: &client.LaunchConfig{
-					Ports: []string{
-						"80:8000/tcp",
-					},
-				},
-				State: "active",
-			},
-		},
-	}
-
-	service := api.Service{
-		ObjectMeta: api.ObjectMeta{
-			Name: "test-lb-1",
-			UID:  "test-lb-1",
-		},
-		Spec: api.ServiceSpec{
-			Ports: []api.ServicePort{
-				api.ServicePort{
-					Name:     "testPort",
-					Protocol: "TCP",
-					Port:     80,
-					NodePort: 8000,
-				},
-			},
-			SessionAffinity: api.ServiceAffinityNone,
-		},
-	}
-	serviceList = &client.ServiceCollection{
-		Data: []client.Service{
-			client.Service{
-				Resource: client.Resource{
-					Id: "1s1",
-				},
-			},
-			client.Service{
-				Resource: client.Resource{
-					Id: "1s2",
-				},
-			},
-		},
-	}
-
-	lbConsumedServicesLinks["1lb1"] = &client.ServiceCollection{
-		Data: []client.Service{
-			client.Service{
-				Resource: client.Resource{
-					Id: "1s1",
-				},
-			},
-		},
-	}
-
-	lbConsumedByServicesLinks["1s1"] = &client.ServiceCollection{
-		Data: []client.Service{
-			client.Service{
-				Resource: client.Resource{
-					Id: "1lb1",
-				},
-			},
-		},
-	}
-
-	status, err := cloudProvider.EnsureLoadBalancer("", &service, []string{"host1"})
-
-	if err != nil {
-		t.Errorf("Error ensuring load balancer, err: [%v]", err)
-	}
-
-	lbServiceLink, ok := lbServiceLinks["1lb1"]
-	if !ok {
-		t.Errorf("lb service links not updated as expected")
-	}
-
-	if len(lbServiceLink.ServiceLinks) != 1 {
-		t.Errorf("lb service links not updated as expected")
-	}
-
-	if lbServiceLink.ServiceLinks[0].(*client.LoadBalancerServiceLink).ServiceId != "1s2" {
-		t.Errorf("lb service links not updated as expected")
-	}
-
-	if len(status.Ingress) != 1 {
-		t.Errorf("Expected to find 1 ingress, found [%d]", len(status.Ingress))
-	}
-
-	if status.Ingress[0].IP != "192.168.1.2" {
-		t.Errorf("Expected to find IP 192.168.1.2, found %s", status.Ingress[0].IP)
 	}
 }
