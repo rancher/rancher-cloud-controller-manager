@@ -922,11 +922,10 @@ func (r *CloudProvider) get(url string) ([]byte, error) {
 	}
 	req.Header.Add("Authorization", basicAuth(r.conf.Global.CattleAccessKey, r.conf.Global.CattleSecretKey))
 	resp, err := http.DefaultClient.Do(req)
-
-	defer resp.Body.Close()
 	if err != nil {
 		return nil, fmt.Errorf("Couldn't get %s: %v", url, err)
 	}
+	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
