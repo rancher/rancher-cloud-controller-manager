@@ -644,10 +644,16 @@ func (r *CloudProvider) NodeAddresses(nodeName types.NodeName) ([]api.NodeAddres
 
 	addresses := []api.NodeAddress{}
 	for _, ip := range host.IPAddresses {
-		addresses = append(addresses, api.NodeAddress{Type: api.NodeInternalIP, Address: ip.Address})
-		addresses = append(addresses, api.NodeAddress{Type: api.NodeExternalIP, Address: ip.Address})
+		addresses = append(addresses, api.NodeAddress{
+			Type:    api.NodeExternalIP,
+			Address: ip.Address,
+		})
 	}
-	addresses = append(addresses, api.NodeAddress{Type: api.NodeHostName, Address: host.RancherHost.Hostname})
+
+	addresses = append(addresses, api.NodeAddress{
+		Type:    api.NodeHostName,
+		Address: host.RancherHost.Hostname,
+	})
 
 	return addresses, nil
 }
