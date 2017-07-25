@@ -209,7 +209,7 @@ func (r *CloudProvider) EnsureLoadBalancer(clusterName string, service *api.Serv
 		return nil, err
 	}
 
-	if !strings.EqualFold(lb.State, "active") {
+	if isValidToActivate(lb.State) {
 		actionChannel := r.waitForLBAction("activate", lb)
 		lbInterface, ok := <-actionChannel
 		if !ok {
@@ -400,7 +400,7 @@ func (r *CloudProvider) setLBHosts(lb *client.LoadBalancerService, hosts []strin
 		} else {
 			host, err := r.hostGetOrFetchFromCache(hostname)
 			if err != nil {
-				return fmt.Errorf("Couldn't create extrnal service %s for LB %s. Error: %#v", hostname, lb.Name, err)
+				return fmt.Errorf("Couldn't create extrnal service [%s] for LB [%s]. Error: %#v", hostname, lb.Name, err)
 			}
 
 			if len(host.IPAddresses) < 1 {
@@ -414,16 +414,16 @@ func (r *CloudProvider) setLBHosts(lb *client.LoadBalancerService, hosts []strin
 			}
 			exSvc, err = r.client.ExternalService.Create(exSvc)
 			if err != nil {
-				return fmt.Errorf("Error setting hosts for LB %s. Couldn't create external service for host %s. Error: %#v",
+				return fmt.Errorf("Error setting hosts for LB [%s]. Couldn't create external service for host [%s]. Error: %#v",
 					lb.Name, extSvcName, err)
 			}
 		}
 
-		if exSvc.State != "active" {
+		if isValidToActivate(exSvc.State) {
 			actionChannel := r.waitForSvcAction("activate", exSvc)
 			svcInterface, ok := <-actionChannel
 			if !ok {
-				return fmt.Errorf("Couldn't call activate on external service %s for LB %s", exSvc.Id, lb.Name)
+				return fmt.Errorf("Couldn't call activate on external service [%s] for LB [%s] in a state [%s]", exSvc.Id, lb.Name, exSvc.State)
 			}
 			exSvc, ok = svcInterface.(*client.ExternalService)
 			if !ok {
@@ -432,7 +432,7 @@ func (r *CloudProvider) setLBHosts(lb *client.LoadBalancerService, hosts []strin
 
 			_, err = r.client.ExternalService.ActionActivate(exSvc)
 			if err != nil {
-				return fmt.Errorf("Couldn't activate service for LB %s. Error: %#v", lb.Name, err)
+				return fmt.Errorf("Couldn't activate service for LB [%s]. Error: %#v", lb.Name, err)
 			}
 		}
 		serviceLinks.ServiceLinks = append(serviceLinks.ServiceLinks, client.ServiceLink{ServiceId: exSvc.Id})
@@ -471,6 +471,16 @@ func (r *CloudProvider) setLBHosts(lb *client.LoadBalancerService, hosts []strin
 	}
 
 	return nil
+}
+
+func isValidToActivate(state string) bool {
+	activeStates := []string{"active", "activating", "updating-active"}
+	for _, activeState := range activeStates {
+		if strings.EqualFold(state, activeState) {
+			return false
+		}
+	}
+	return true
 }
 
 func buildExternalServiceName(hostname string) string {
