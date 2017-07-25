@@ -630,7 +630,7 @@ func (r *CloudProvider) deleteLBConsumedServices(lb *client.LoadBalancerService)
 			glog.Infof("Service %s has more than consumer. Will not delete it.", service.Id)
 			continue
 		}
-
+		glog.Infof("Removing consumed external service [%s]", service.Name)
 		err = r.client.Service.Delete(&service)
 		if err != nil {
 			glog.Warningf("Error deleting service %s. Moving on. Error: %#v", service.Id, err)
