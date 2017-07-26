@@ -694,9 +694,7 @@ func (r *CloudProvider) InstanceType(nodeName types.NodeName) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
-	// Maybe do something smarter here
-	return "", errors.New("unimplemented")
+	return providerName, nil
 }
 
 // InstanceTypeByProviderID returns the cloudprovider instance type of the node with the specified unique providerID
