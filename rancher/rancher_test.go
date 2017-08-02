@@ -537,16 +537,20 @@ func TestNodeAddresses(t *testing.T) {
 
 	addresses, err := cloudProvider.NodeAddresses("test2")
 
-	if len(addresses) != 3 {
-		t.Errorf("expected 3 addresses, found, [%+v], err: [%v]", addresses, err)
+	if len(addresses) != 5 {
+		t.Errorf("expected 5 addresses, found, [%+v], err: [%v]", addresses, err)
 	}
 
-	if addresses[1].Type != api.NodeExternalIP || addresses[1].Address != "192.168.1.1" {
-		t.Errorf("expected address 1 to be 192.168.1.1, found %s", addresses[1].Address)
+	if addresses[2].Type != api.NodeExternalIP || addresses[2].Address != "192.168.1.1" {
+		t.Errorf("expected address 0 to be 192.168.1.1, found %s", addresses[2].Address)
 	}
 
-	if addresses[2].Type != api.NodeHostName || addresses[2].Address != "test2" {
-		t.Errorf("expected address 2 to be test2, found %s", addresses[2].Address)
+	if addresses[3].Type != api.NodeInternalIP || addresses[3].Address != "192.168.1.1" {
+		t.Errorf("expected address 1 to be 192.168.1.1, found %s", addresses[3].Address)
+	}
+
+	if addresses[4].Type != api.NodeHostName || addresses[4].Address != "test2" {
+		t.Errorf("expected address 2 to be test2, found %s", addresses[4].Address)
 	}
 }
 
