@@ -658,6 +658,10 @@ func (r *CloudProvider) NodeAddresses(nodeName types.NodeName) ([]api.NodeAddres
 			Type:    api.NodeExternalIP,
 			Address: ip.Address,
 		})
+		addresses = append(addresses, api.NodeAddress{
+			Type:    api.NodeInternalIP,
+			Address: ip.Address,
+		})
 	}
 
 	addresses = append(addresses, api.NodeAddress{
@@ -868,7 +872,10 @@ func (r *CloudProvider) getHostByName(name string) (*Host, error) {
 
 // GetZone is an implementation of Zones.GetZone
 func (r *CloudProvider) GetZone() (cloudprovider.Zone, error) {
-	return cloudprovider.Zone{}, errors.New("unimplemented")
+	return cloudprovider.Zone{
+		FailureDomain: "FailureDomain1",
+		Region:        "Region1",
+	}, nil
 }
 
 // --- Utility functions ---
