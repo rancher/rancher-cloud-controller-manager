@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/rancher/go-rancher/v2"
+	"github.com/rancher/go-rancher/v3"
 
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/cache"
@@ -27,7 +27,6 @@ import (
 
 type Host struct {
 	RancherHost *client.Host
-	IPAddresses []client.IpAddress
 }
 
 type PublicEndpoint struct {
@@ -99,15 +98,6 @@ type instanceCollection struct {
 type instanceAndHost struct {
 	client.Instance
 	Hosts []client.Host `json:"hosts,omitempty"`
-}
-
-type hostCollection struct {
-	Data []hostAndIPAddresses
-}
-
-type hostAndIPAddresses struct {
-	client.Host
-	IPAddresses []client.IpAddress `json:"ipAddresses,omitempty"`
 }
 
 // GetLoadBalancer is an implementation of LoadBalancer.GetLoadBalancer
@@ -380,7 +370,6 @@ func (r *CloudProvider) getOrCreateEnvironment() (*client.Stack, error) {
 }
 
 func (r *CloudProvider) setLBHosts(lb *client.LoadBalancerService, hosts []string, ports []api.ServicePort) error {
-	serviceLinks := &client.SetServiceLinksInput{}
 	portRules := []client.PortRule{}
 	for _, hostname := range hosts {
 		extSvcName := buildExternalServiceName(hostname)
@@ -403,13 +392,13 @@ func (r *CloudProvider) setLBHosts(lb *client.LoadBalancerService, hosts []strin
 				return fmt.Errorf("Couldn't create extrnal service [%s] for LB [%s]. Error: %#v", hostname, lb.Name, err)
 			}
 
-			if len(host.IPAddresses) < 1 {
+			if host.RancherHost.AgentIpAddress == "" {
 				continue
 			}
 
 			exSvc = &client.ExternalService{
 				Name:                extSvcName,
-				ExternalIpAddresses: []string{host.IPAddresses[0].Address},
+				ExternalIpAddresses: []string{host.RancherHost.AgentIpAddress},
 				StackId:             lb.StackId,
 			}
 			exSvc, err = r.client.ExternalService.Create(exSvc)
@@ -435,7 +424,6 @@ func (r *CloudProvider) setLBHosts(lb *client.LoadBalancerService, hosts []strin
 				return fmt.Errorf("Couldn't activate service for LB [%s]. Error: %#v", lb.Name, err)
 			}
 		}
-		serviceLinks.ServiceLinks = append(serviceLinks.ServiceLinks, client.ServiceLink{ServiceId: exSvc.Id})
 		for _, port := range ports {
 			portRule := client.PortRule{
 				SourcePort: int64(port.Port),
@@ -455,17 +443,13 @@ func (r *CloudProvider) setLBHosts(lb *client.LoadBalancerService, hosts []strin
 		return fmt.Errorf("Couldn't call setservicelinks on LB %s", lb.Name)
 	}
 	lb = convertLB(lbInterface)
-	_, err := r.client.LoadBalancerService.ActionSetservicelinks(lb, serviceLinks)
-	if err != nil {
-		return fmt.Errorf("Error setting hosts for LB%s. Couldn't set LB service links. Error: %#v.", lb.Name, err)
-	}
 
 	toUpdate := make(map[string]interface{})
 	updatedConfig := client.LbConfig{}
 	updatedConfig.PortRules = portRules
 	toUpdate["lbConfig"] = updatedConfig
 
-	_, err = r.client.LoadBalancerService.Update(lb, toUpdate)
+	_, err := r.client.LoadBalancerService.Update(lb, toUpdate)
 	if err != nil {
 		return fmt.Errorf("Error updating port rules for LB [%s]. Error: %#v.", lb.Name, err)
 	}
@@ -651,25 +635,20 @@ func (r *CloudProvider) NodeAddresses(nodeName types.NodeName) ([]api.NodeAddres
 	if err != nil {
 		return nil, err
 	}
-
-	addresses := []api.NodeAddress{}
-	for _, ip := range host.IPAddresses {
-		addresses = append(addresses, api.NodeAddress{
-			Type:    api.NodeExternalIP,
-			Address: ip.Address,
-		})
-		addresses = append(addresses, api.NodeAddress{
-			Type:    api.NodeInternalIP,
-			Address: ip.Address,
-		})
-	}
-
-	addresses = append(addresses, api.NodeAddress{
-		Type:    api.NodeHostName,
-		Address: host.RancherHost.Hostname,
-	})
-
-	return addresses, nil
+	return []api.NodeAddress{
+		{
+			Type: api.NodeExternalIP,
+			Address: host.RancherHost.AgentIpAddress,
+		},
+		{
+			Type: api.NodeInternalIP,
+			Address: host.RancherHost.AgentIpAddress,
+		},
+		{
+			Type: api.NodeHostName,
+			Address: host.RancherHost.Hostname,
+		},
+	}, nil
 }
 
 // ExternalID returns the cloud provider ID of the specified instance (deprecated).
@@ -848,21 +827,8 @@ func (r *CloudProvider) getHostByName(name string) (*Host, error) {
 		return nil, fmt.Errorf("multiple instances found for name: %s", name)
 	}
 
-	rancherHost := &hostsToReturn[0]
-
-	coll := &client.IpAddressCollection{}
-	err = r.client.GetLink(rancherHost.Resource, "ipAddresses", coll)
-	if err != nil {
-		return nil, fmt.Errorf("Error getting ip addresses for node [%s]. Error: %#v", name, err)
-	}
-
-	if len(coll.Data) == 0 {
-		return nil, cloudprovider.InstanceNotFound
-	}
-
 	host := &Host{
-		RancherHost: rancherHost,
-		IPAddresses: coll.Data,
+		RancherHost: &hostsToReturn[0],
 	}
 
 	return host, nil
